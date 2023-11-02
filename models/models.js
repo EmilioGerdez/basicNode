@@ -1,4 +1,4 @@
-const { db, Sequelize, DataTypes } = require('../config/db');
+const { db, DataTypes } = require('../config/db');
 const bcrypt = require('bcrypt');
 
 const User = db.define('users', {
@@ -8,7 +8,7 @@ const User = db.define('users', {
     primaryKey: true,
   },
   name: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     allowNull: false,
     validate: {
       is: {
@@ -29,7 +29,7 @@ const User = db.define('users', {
     },
   },
   lastName: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     allowNull: false,
     validate: {
       is: {
@@ -50,7 +50,7 @@ const User = db.define('users', {
     },
   },
   username: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     allowNull: false,
     unique: true,
     validate: {
@@ -73,7 +73,7 @@ const User = db.define('users', {
     }
   },
   email: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     allowNull: false,
     unique: true,
     validate: {
@@ -94,7 +94,7 @@ const User = db.define('users', {
     }
   },
   password: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(50),
     allowNull: false,
     validate: {
       is: {
@@ -123,19 +123,25 @@ const User = db.define('users', {
     type: DataTypes.DATE,
     allowNull: false,
     defaultValue: DataTypes.NOW,
-  },
+  },},
+  {
+    hooks: {
+      async beforeCreate(user) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+      },
 
-  async beforeCreate(user) {
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
+      async beforeUpdate(user) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(user.password, salt);
+        user.updatedAt = DataTypes.NOW;
+      },
+    },
+    async validPassword(password) {
+      return await bcrypt.compare(password, this.password);
+    }
   },
-
-  async beforeUpdate(user) {
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(user.password, salt);
-    user.updatedAt = DataTypes.NOW;
-  },
-});
+);
 
 module.exports = User;
 
